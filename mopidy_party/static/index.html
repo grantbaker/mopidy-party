@@ -10,16 +10,18 @@
     <link href="vendors/bootstrap.min.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
 
-    <script type="text/javascript" src="/mopidy/mopidy.min.js"></script>
     <script type="text/javascript" src="vendors/angular.min.js"></script>
+    <script type="text/javascript" src="vendors/angular-cookies.min.js"></script>
+    <script type="text/javascript" src="/mopidy/mopidy.min.js"></script>
+
     <script type="text/javascript" src="controller.js"></script>
   </head>
   <body ng-controller="MainController">
     <div class="container-fluid" style="margin-top:20px">
       <div class="row">
         <div class="col-xs-4">
-          <button type="button" class="btn" ng-click="togglePause()" ng-disabled="!ready" ng-class="{'btn-success' : currentState.paused, 'btn-danger': !currentState.paused}">
-            <span class="glyphicon glyphicon-pause" ng-class="{'glyphicon-play': currentState.paused, 'glyphicon-pause' : !currentState.paused}"></span>
+          <button type="button" class="btn" ng-click="toggleQueue()" ng-disabled="!ready" ng-class="{'btn-success' : currentState.queue, 'btn-default': !currentState.queue}">
+            <span class="glyphicon glyphicon-menu-hamburger"></span>
           </button>
           <button type="button" class="btn btn-primary" ng-click="nextTrack()" ng-disabled="!ready">
             <span class="glyphicon glyphicon-fast-forward"></span>
@@ -32,11 +34,11 @@
         </div>
         <div class="col-xs-8">
           <div class="well well-sm">
-            {{ currentState.track.name }} <small>{{ printDuration(currentState.track) }}</small>
+            Now Playing: {{ currentState.track.name }} <small>{{ printDuration(currentState.track) }}</small>
           </div>
         </div>
       </div>
-      <div class="row">
+      <div class="row" ng-hide="currentState.queue">
         <div class="col-xs-12">
           <form ng-submit="search()">
             <input type="text" role="search" class="form-control" placeholder="Search..." ng-model="searchField" ng-disabled="!ready">
@@ -47,13 +49,19 @@
         </div>
       </div>
 
+      <div class="row" ng-show="currentState.queue">
+        <div class="col-xs-12">
+          <big>Current Queue:</big>
+        </div>
+      </div>
+
       <div class="alert" role="alert" ng-show="message.length" ng-class="{'alert-success' : (message[0] == 'success'), 'alert-danger' : (message[0] == 'error')}">
         {{ message[1] }}
       </div>
 
-      <ul class="list-group" style="margin-top:20px">
+      <ul class="list-group" ng-hide="loading" style="margin-top:20px">
         <li class="list-group-item" ng-repeat="track in tracks">
-          <button type="button" class="btn btn-xs btn-success add-button" ng-click="addTrack(track)" ng-disabled="track.disabled">
+          <button type="button" class="btn btn-xs btn-success add-button" ng-click="addTrack(track)" ng-disabled="track.disabled" ng-hide="currentState.queue">
             <span class="glyphicon glyphicon-play" ng-if="!track.disabled"></span>
             <span class="glyphicon glyphicon-ok"   ng-if="track.disabled"></span>
           </button>

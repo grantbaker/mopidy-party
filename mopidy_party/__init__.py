@@ -26,8 +26,8 @@ class PartyRequestHandler(tornado.web.RequestHandler):
             self.data["track"] = currentTrackURI
             self.data["votes"] = []
 
-        if (self.request.remote_ip in self.data["votes"]): # User has already voted
-            self.write("You have already voted to skip this song =)")
+        if (self.get_cookie("voted", default=None) != None): # User has already voted
+            self.write("You have already voted to skip this song")
         else: # Valid vote
             self.data["votes"].append(self.request.remote_ip)
             if (len(self.data["votes"]) == self.requiredVotes):

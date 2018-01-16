@@ -1,8 +1,8 @@
 'use strict';
 
 // TODO : add a mopidy service designed for angular, to avoid ugly $scope.$apply()...
-angular.module('partyApp', [])
-  .controller('MainController', function($scope) {
+angular.module('partyApp', ['ngCookies'])
+  .controller('MainController', function($scope, $cookies) {
 
   // Scope variables
 
@@ -11,7 +11,7 @@ angular.module('partyApp', [])
   $scope.loading = true;
   $scope.ready   = false;
   $scope.currentState = {
-    paused : false,
+    queue  : false,
     length : 0,
     track  : {
       length : 0,
@@ -54,6 +54,7 @@ angular.module('partyApp', [])
   });
   mopidy.on('event:trackPlaybackStarted', function(event){
     $scope.currentState.track = event.tl_track.track;
+    $cookies.remove("voted");
     $scope.$apply();
   });
   mopidy.on('event:tracklistChanged', function(){
@@ -75,9 +76,29 @@ angular.module('partyApp', [])
     return '(' + _min + ':' + (_sec < 10 ? '0' + _sec : _sec) + ')' ;
   };
 
-  $scope.togglePause = function(){
-    var _fn = $scope.currentState.paused ? mopidy.playback.resume : mopidy.playback.pause;
-    _fn().done();
+  $scope.toggleQueue = function(){
+    var _fn = $scope.currentState.queue ? $scope.search : $scope.loadQueue;
+    $scope.currentState.queue = !$scope.currentState.queue;
+    _fn();
+  };
+
+  $scope.loadQueue = function(){
+
+    if(!$scope.searchField)
+      return;
+
+    $scope.message = [];
+    $scope.loading = true;
+
+    mopidy.tracklist.getTracks(
+    ).done(function(res){
+
+      $scope.tracks = res;
+
+      $scope.loading = false;
+
+      $scope.$apply();
+    });
   };
 
   $scope.search = function(){
@@ -89,7 +110,7 @@ angular.module('partyApp', [])
     $scope.loading = true;
 
     mopidy.library.search({
-      'any' : [$scope.searchField]
+      'any' : [$scope.searchField] // Restrict search to spotify
     }).done(function(res){
 
       $scope.loading = false;
@@ -133,7 +154,7 @@ angular.module('partyApp', [])
     })
     .then(function(){
       // Notify user
-      $scope.message = ['success', 'Next track: ' + track.name];
+      $scope.message = ['success', 'Queued: ' + track.name];
       $scope.$apply();
       return mopidy.tracklist.setConsume([true]);
     })
@@ -160,6 +181,7 @@ angular.module('partyApp', [])
     xmlHttp.open( "GET", "/party/vote", false ); // false for synchronous request
     xmlHttp.send( null );
     $scope.message = ['success', xmlHttp.responseText];
+    $cookies.put("voted", $scope.currentState.track.uri);
     $scope.$apply();
   };
 });
