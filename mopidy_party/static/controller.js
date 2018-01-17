@@ -61,6 +61,9 @@ angular.module('partyApp', ['ngCookies'])
     mopidy.tracklist.getLength().done(function(length){
       $scope.currentState.length = length;
       $scope.$apply();
+      if($scope.currentState.queue) {
+        $scope.loadQueue();
+      }
     });
   });
 
@@ -79,13 +82,13 @@ angular.module('partyApp', ['ngCookies'])
   $scope.toggleQueue = function(){
     var _fn = $scope.currentState.queue ? $scope.search : $scope.loadQueue;
     $scope.currentState.queue = !$scope.currentState.queue;
+    if(!$scope.currentState.queue && !$scope.searchField) { // We're in search and field is empty
+      $scope.loading = true;
+    }
     _fn();
   };
 
   $scope.loadQueue = function(){
-
-    if(!$scope.searchField)
-      return;
 
     $scope.message = [];
     $scope.loading = true;
@@ -110,7 +113,7 @@ angular.module('partyApp', ['ngCookies'])
     $scope.loading = true;
 
     mopidy.library.search({
-      'any' : [$scope.searchField] // Restrict search to spotify
+      'any' : [$scope.searchField]
     }).done(function(res){
 
       $scope.loading = false;
