@@ -124,20 +124,21 @@ angular.module('partyApp', ['ngCookies'])
       while(_found){
         _found = false;
         for(var i = 0; i < res.length; i++){
-          if(res[i].tracks && res[i].tracks[_index]){
+          if(res[i].tracks && res[i].tracks[_index] && res[i].tracks[_index].uri.substring(0,4) == 'spot'){
+
             $scope.tracks.push(res[i].tracks[_index]);
             _found = true;
             mopidy.tracklist.filter({'uri': [res[i].tracks[_index].uri]}).done(function(matches){
-    if (matches.length) {
-      for (var i = 0; i < $scope.tracks.length; i++)
-      {
-        if ($scope.tracks[i].uri == matches[0].track.uri)
-          $scope.tracks[i].disabled = true;
+                if (matches.length) {
+                  for (var i = 0; i < $scope.tracks.length; i++)
+                  {
+                    if ($scope.tracks[i].uri == matches[0].track.uri)
+                      $scope.tracks[i].disabled = true;
 
-      }
-      $scope.$apply();
-    }
-      });
+                  }
+                  $scope.$apply();
+                }
+            });
           }
         }
         _index++;
