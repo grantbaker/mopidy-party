@@ -133,6 +133,7 @@ angular.module('partyApp', ['ngCookies'])
       {
         if ($scope.tracks[i].uri == matches[0].track.uri)
           $scope.tracks[i].disabled = true;
+
       }
       $scope.$apply();
     }
@@ -147,36 +148,51 @@ angular.module('partyApp', ['ngCookies'])
   };
 
   $scope.addTrack = function(track){
+    var previousAdd = $cookies.get('queued')
+    console.log(previousAdd)
+    if (previousAdd == null){
+        track.disabled = true;
 
-    track.disabled = true;
+        var now = new Date();
+        var expire = new Date(now);
+        expire.setMinutes(now.getMinutes() + 10)
+        // Hardcoded 10 minute cooldown for queueing songs
 
-    mopidy.tracklist
-    .index()
-    .then(function(index){
-      return mopidy.tracklist.add({uris: [track.uri]});
-    })
-    .then(function(){
-      // Notify user
-      $scope.message = ['success', 'Queued: ' + track.name];
-      $scope.$apply();
-      return mopidy.tracklist.setConsume([true]);
-    })
-    .then(function(){
-      return mopidy.playback.getState();
-    })
-    .then(function(state){
-      // Get current state
-      if(state !== 'stopped')
-        return;
-      // If stopped, start music NOW!
-      return mopidy.playback.play();
-    })
-    .catch(function(){
-      track.disabled = false;
-      $scope.message = ['error', 'Unable to add track, please try again...'];
-      $scope.$apply();
-    })
-    .done();
+        $cookies.put("queued", $scope.currentState.track.uri,{
+            'expires' : expire
+        });
+
+        mopidy.tracklist
+        .index()
+        .then(function(index){
+          return mopidy.tracklist.add({uris: [track.uri]});
+        })
+        .then(function(){
+          // Notify user
+          $scope.message = ['success', 'Queued: ' + track.name];
+          $scope.$apply();
+          return mopidy.tracklist.setConsume([true]);
+        })
+        .then(function(){
+          return mopidy.playback.getState();
+        })
+        .then(function(state){
+          // Get current state
+          if(state !== 'stopped')
+            return;
+          // If stopped, start music NOW!
+          return mopidy.playback.play();
+        })
+        .catch(function(){
+          track.disabled = false;
+          $scope.message = ['error', 'Unable to add track, please try again...'];
+          $scope.$apply();
+        })
+        .done();
+    } else {
+        $scope.message = ['error', 'You queued a song within the past 10 minutes. Please wait to queue another.'];
+        //$scope.$apply();
+    }
   };
 
   $scope.nextTrack = function(){
